@@ -57,10 +57,38 @@ func init() {
 /*--------------------------------------------------------------------------------------------------
  */
 
+func readConfig(path string, config interface{}) error {
+	configBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	ext := filepath.Ext(path)
+	if ".js" == ext || ".json" == ext {
+		if err = json.Unmarshal(configBytes, config); err != nil {
+			return err
+		}
+	} else if ".yml" == ext || ".yaml" == ext {
+		if err = yaml.Unmarshal(configBytes, config); err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("config file extension not recognised: %v", path)
+	}
+	return nil
+}
+
 /*
 Bootstrap - bootstraps the configuration loading, parsing and reporting for a service through cmd
 flags. The argument configPtr should be a pointer to a serializable configuration object with all
 default values.
+
+configPtr - should be a pointer to a config struct, which contains default values and should be
+populated with a users config values if applicable. For an example look at the stats and logger
+files.
+
+defaultConfigPaths - if there are known standard configuration paths then you can list them here,
+if the user neglects to specify a config then bootstrap will iterate these paths and read the first
+one that exists, if any.
 
 Bootstrap allows a user to do the following:
 - Print version and build info and exit
@@ -76,7 +104,7 @@ following:
 
 Returns a flag indicating whether the service should continue or not.
 */
-func Bootstrap(configPtr interface{}) bool {
+func Bootstrap(configPtr interface{}, defaultConfigPaths ...string) bool {
 	// Ensure that cmd flags are parsed.
 	if !flag.Parsed() {
 		flag.Parse()
@@ -89,27 +117,22 @@ func Bootstrap(configPtr interface{}) bool {
 	}
 
 	if len(*configPath) > 0 {
-		// Read config file.
-		configBytes, err := ioutil.ReadFile(*configPath)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error reading config file: %v", err))
+		if err := readConfig(*configPath, configPtr); err != nil {
+			fmt.Fprintf(os.Stderr, "Configuration file read error: %v\n", err)
 			return false
 		}
+	} else {
+		// Iterate default config paths
+		for _, path := range defaultConfigPaths {
+			if _, err := os.Stat(path); err == nil {
+				fmt.Fprintf(os.Stdout, "Config file not specified, reading from %v\n", path)
 
-		ext := filepath.Ext(*configPath)
-		if ".js" == ext || ".json" == ext {
-			if err = json.Unmarshal(configBytes, configPtr); err != nil {
-				fmt.Fprintln(os.Stderr, fmt.Sprintf("Error parsing config file: %v", err))
-				return false
+				if err = readConfig(path, configPtr); err != nil {
+					fmt.Fprintf(os.Stderr, "Configuration file read error: %v\n", err)
+					return false
+				}
+				break
 			}
-		} else if ".yml" == ext || ".yaml" == ext {
-			if err = yaml.Unmarshal(configBytes, configPtr); err != nil {
-				fmt.Fprintln(os.Stderr, fmt.Sprintf("Error parsing config file: %v", err))
-				return false
-			}
-		} else {
-			fmt.Fprintln(os.Stderr, "Configuration file extension not recognised")
-			return false
 		}
 	}
 
