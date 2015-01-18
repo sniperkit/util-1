@@ -125,7 +125,7 @@ func Bootstrap(configPtr interface{}, defaultConfigPaths ...string) bool {
 		// Iterate default config paths
 		for _, path := range defaultConfigPaths {
 			if _, err := os.Stat(path); err == nil {
-				fmt.Fprintf(os.Stdout, "Config file not specified, reading from %v\n", path)
+				fmt.Fprintf(os.Stderr, "Config file not specified, reading from %v\n", path)
 
 				if err = readConfig(path, configPtr); err != nil {
 					fmt.Fprintf(os.Stderr, "Configuration file read error: %v\n", err)
