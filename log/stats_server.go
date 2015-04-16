@@ -25,7 +25,10 @@ package log
 import (
 	"errors"
 	"net/http"
+	"path"
 	"time"
+
+	"github.com/kardianos/osext"
 )
 
 /*--------------------------------------------------------------------------------------------------
@@ -88,6 +91,15 @@ func NewStatsServer(config StatsServerConfig, logger *Logger, stats *Stats) (*St
 		return nil, errors.New("invalid config value for Address/Path")
 	}
 	if len(statsServer.config.StaticPath) > 0 && len(statsServer.config.StaticFilePath) > 0 {
+		// If the static file path is relative then we use the location of the binary to resolve it.
+		if !path.IsAbs(statsServer.config.StaticFilePath) {
+			if executablePath, err := osext.ExecutableFolder(); err == nil {
+				statsServer.config.StaticFilePath = path.Join(
+					executablePath,
+					statsServer.config.StaticFilePath,
+				)
+			}
+		}
 		statsServer.serveMux.Handle(statsServer.config.StaticPath,
 			http.StripPrefix(statsServer.config.StaticPath,
 				http.FileServer(http.Dir(statsServer.config.StaticFilePath))))
