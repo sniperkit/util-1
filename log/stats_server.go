@@ -24,11 +24,11 @@ package log
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
-	"path/filepath"
 	"time"
 
-	"github.com/kardianos/osext"
+	"github.com/jeffail/util/path"
 )
 
 /*--------------------------------------------------------------------------------------------------
@@ -92,13 +92,8 @@ func NewStatsServer(config StatsServerConfig, logger *Logger, stats *Stats) (*St
 	}
 	if len(statsServer.config.StaticPath) > 0 && len(statsServer.config.StaticFilePath) > 0 {
 		// If the static file path is relative then we use the location of the binary to resolve it.
-		if !filepath.IsAbs(statsServer.config.StaticFilePath) {
-			if executablePath, err := osext.ExecutableFolder(); err == nil {
-				statsServer.config.StaticFilePath = filepath.Join(
-					executablePath,
-					statsServer.config.StaticFilePath,
-				)
-			}
+		if err := path.FromBinaryIfRelative(&statsServer.config.StaticFilePath); err != nil {
+			return nil, fmt.Errorf("relative path for static files could not be resolved: %v", err)
 		}
 		statsServer.serveMux.Handle(statsServer.config.StaticPath,
 			http.StripPrefix(statsServer.config.StaticPath,
