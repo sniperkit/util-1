@@ -64,6 +64,11 @@ func DefaultStatsServerConfig() StatsServerConfig {
 /*--------------------------------------------------------------------------------------------------
  */
 
+// Errors for the StatsServer type.
+var (
+	ErrInvalidConfig = errors.New("invalid config value for Address/Path")
+)
+
 /*
 StatsServer - A server constructed to present an HTTP endpoint for obtaining live statistics
 regarding the service.
@@ -88,7 +93,7 @@ func NewStatsServer(config StatsServerConfig, logger *Logger, stats *Stats) (*St
 		serveMux: http.NewServeMux(),
 	}
 	if len(statsServer.config.Address) == 0 || len(statsServer.config.Path) == 0 {
-		return nil, errors.New("invalid config value for Address/Path")
+		return nil, ErrInvalidConfig
 	}
 	if len(statsServer.config.StaticPath) > 0 && len(statsServer.config.StaticFilePath) > 0 {
 		// If the static file path is relative then we use the location of the binary to resolve it.
@@ -133,7 +138,7 @@ Listen - Bind to the configured http endpoint and begin serving requests.
 */
 func (s *StatsServer) Listen() error {
 	if len(s.config.Address) == 0 {
-		return errors.New("invalid config value for Address")
+		return ErrInvalidConfig
 	}
 	s.logger.Infof("Listening for stats requests at address: %v%v\n", s.config.Address, s.config.Path)
 	if len(s.config.StaticPath) > 0 && len(s.config.StaticFilePath) > 0 {

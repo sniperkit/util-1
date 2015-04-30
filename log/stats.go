@@ -60,6 +60,12 @@ func DefaultStatsConfig() StatsConfig {
 /*--------------------------------------------------------------------------------------------------
  */
 
+// Errors for the Stats type.
+var (
+	ErrStatsNotTracked = errors.New("internal stats not being tracked")
+	ErrTimedOut        = errors.New("timed out")
+)
+
 /*
 Stats - A stats object with capability to hold internal stats as a JSON endpoint, push to statsd,
 or both.
@@ -128,7 +134,7 @@ func (s *Stats) GetStats(timeout time.Duration) (string, error) {
 			default:
 			}
 		} else {
-			errorChan <- errors.New("internal stats not being tracked")
+			errorChan <- ErrStatsNotTracked
 		}
 	}
 
@@ -139,7 +145,7 @@ func (s *Stats) GetStats(timeout time.Duration) (string, error) {
 		return "", err
 	case <-time.After(timeout):
 	}
-	return "", errors.New("request timed out")
+	return "", ErrTimedOut
 }
 
 /*--------------------------------------------------------------------------------------------------
