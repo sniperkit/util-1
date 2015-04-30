@@ -20,6 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+/*
+Package util provides a few bootstrapping utilities for golang services, and a consistent API to
+wrap third parties libraries for things such as stats aggregation and logging.
+*/
 package util
 
 import (
@@ -152,10 +156,6 @@ func Bootstrap(configPtr interface{}, defaultConfigPaths ...string) bool {
 		}
 		return false
 	}
-
-	// Set a rand seed.
-	rand.Seed(time.Now().Unix())
-
 	return true
 }
 
