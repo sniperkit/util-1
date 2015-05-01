@@ -41,7 +41,6 @@ type StatsConfig struct {
 	JobBuffer      int64  `json:"job_buffer" yaml:"job_buffer"`
 	RootPath       string `json:"prefix" yaml:"prefix"`
 	RetainInternal bool   `json:"retain_internal" yaml:"retain_internal"`
-	StatsDAddress  string `json:"statsd_address" yaml:"statsd_address"`
 }
 
 /*
@@ -53,7 +52,6 @@ func DefaultStatsConfig() StatsConfig {
 		JobBuffer:      100,
 		RootPath:       "service",
 		RetainInternal: true,
-		StatsDAddress:  "",
 	}
 }
 
@@ -67,15 +65,16 @@ var (
 )
 
 /*
-Stats - A stats object with capability to hold internal stats as a JSON endpoint, push to statsd,
-or both.
+Stats - A stats object with capability to hold internal stats as a JSON endpoint.
 */
 type Stats struct {
-	config    StatsConfig
-	jsonRoot  *gabs.Container
-	json      *gabs.Container
-	timestamp time.Time
-	jobChan   chan func()
+	config        StatsConfig
+	jsonRoot      *gabs.Container
+	json          *gabs.Container
+	pathPrefix    string
+	timestamp     time.Time
+	jobChan       chan func()
+	riemannClient *RiemannClient
 }
 
 /*
@@ -83,34 +82,50 @@ NewStats - Create and return a new stats object.
 */
 func NewStats(config StatsConfig) *Stats {
 	var jsonRoot, json *gabs.Container
+	var pathPrefix string
 
 	if config.RetainInternal {
 		jsonRoot = gabs.New()
 		if len(config.RootPath) > 0 {
+			pathPrefix = config.RootPath + "."
 			json, _ = jsonRoot.SetP(map[string]interface{}{}, config.RootPath)
 		} else {
 			json = jsonRoot
 		}
 	}
 	stats := Stats{
-		config:    config,
-		jsonRoot:  jsonRoot,
-		json:      json,
-		timestamp: time.Now(),
-		jobChan:   make(chan func(), config.JobBuffer),
+		config:     config,
+		jsonRoot:   jsonRoot,
+		json:       json,
+		pathPrefix: pathPrefix,
+		timestamp:  time.Now(),
+		jobChan:    make(chan func(), config.JobBuffer),
 	}
 	go stats.loop()
 	return &stats
 }
 
 /*
-Close - Stops the stats object from accepting stats and pushing stats to a configured statsd
-service.
+UseRiemann - Register a RiemannClient object to be used for pushing stats to a riemann service.
+*/
+func (s *Stats) UseRiemann(client *RiemannClient) error {
+	if client == nil {
+		return ErrClientNil
+	}
+	s.riemannClient = client
+	return nil
+}
+
+/*
+Close - Stops the stats object from accepting stats.
 */
 func (s *Stats) Close() {
 	jChan := s.jobChan
 	s.jobChan = nil
 	close(jChan)
+
+	// Closure is done elsewhere since this client might be shared.
+	s.riemannClient = nil
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -163,6 +178,12 @@ func (s *Stats) Incr(stat string, value int64) {
 				s.json.SetP(value, stat)
 			}
 		}
+		if nil != s.riemannClient {
+			s.riemannClient.SendEvent(RiemannEvent{
+				Service: s.pathPrefix + stat,
+				Metric:  value,
+			})
+		}
 	}
 }
 
@@ -178,6 +199,12 @@ func (s *Stats) Decr(stat string, value int64) {
 				s.json.SetP(0-value, stat)
 			}
 		}
+		if nil != s.riemannClient {
+			s.riemannClient.SendEvent(RiemannEvent{
+				Service: s.pathPrefix + stat,
+				Metric:  0 - value,
+			})
+		}
 	}
 }
 
@@ -189,6 +216,12 @@ func (s *Stats) Timing(stat string, delta int64) {
 		if nil != s.json {
 			s.json.SetP(fmt.Sprintf("%vms", delta), stat)
 		}
+		if nil != s.riemannClient {
+			s.riemannClient.SendEvent(RiemannEvent{
+				Service: s.pathPrefix + stat,
+				Metric:  delta,
+			})
+		}
 	}
 }
 
@@ -199,6 +232,12 @@ func (s *Stats) Gauge(stat string, value int64) {
 	s.jobChan <- func() {
 		if nil != s.json {
 			s.json.SetP(value, stat)
+		}
+		if nil != s.riemannClient {
+			s.riemannClient.SendEvent(RiemannEvent{
+				Service: s.pathPrefix + stat,
+				Metric:  value,
+			})
 		}
 	}
 }

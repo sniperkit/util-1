@@ -23,7 +23,6 @@ THE SOFTWARE.
 package log
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -63,11 +62,6 @@ func DefaultStatsServerConfig() StatsServerConfig {
 
 /*--------------------------------------------------------------------------------------------------
  */
-
-// Errors for the StatsServer type.
-var (
-	ErrInvalidConfig = errors.New("invalid config value for Address/Path")
-)
 
 /*
 StatsServer - A server constructed to present an HTTP endpoint for obtaining live statistics

@@ -31,10 +31,8 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"path/filepath"
-	"time"
 
 	"gopkg.in/yaml.v2"
 )
