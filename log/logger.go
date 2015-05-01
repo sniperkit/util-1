@@ -155,9 +155,10 @@ func (l *Logger) NewModule(prefix string) *Logger {
 	config.Prefix = fmt.Sprintf("%v%v", config.Prefix, prefix)
 
 	return &Logger{
-		stream: l.stream,
-		config: config,
-		level:  l.level,
+		stream:        l.stream,
+		config:        config,
+		level:         l.level,
+		riemannClient: l.riemannClient,
 	}
 }
 

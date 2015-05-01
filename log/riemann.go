@@ -63,9 +63,10 @@ RiemannClient - Connect to a riemann service, this struct simply wraps a third p
 actually implements the client protocol.
 */
 type RiemannClient struct {
-	config  RiemannClientConfig
-	rClient *goryman.GorymanClient
-	jobChan chan func()
+	config     RiemannClientConfig
+	rClient    *goryman.GorymanClient
+	jobChan    chan func()
+	closedChan chan struct{}
 }
 
 /*
@@ -83,9 +84,10 @@ func NewRiemannClient(config RiemannClientConfig) (*RiemannClient, error) {
 	}
 
 	client := RiemannClient{
-		config:  config,
-		rClient: c,
-		jobChan: make(chan func(), config.JobBuffer),
+		config:     config,
+		rClient:    c,
+		jobChan:    make(chan func(), config.JobBuffer),
+		closedChan: make(chan struct{}),
 	}
 	go client.loop()
 
@@ -96,6 +98,7 @@ func (r *RiemannClient) loop() {
 	for job := range r.jobChan {
 		job()
 	}
+	r.closedChan <- struct{}{}
 }
 
 /*
@@ -106,6 +109,7 @@ func (r *RiemannClient) Close() {
 	r.jobChan = nil
 	close(jChan)
 
+	<-r.closedChan
 	r.rClient.Close()
 }
 

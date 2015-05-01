@@ -181,7 +181,7 @@ func (s *Stats) Incr(stat string, value int64) {
 		if nil != s.riemannClient {
 			s.riemannClient.SendEvent(RiemannEvent{
 				Service: s.pathPrefix + stat,
-				Metric:  value,
+				Metric:  int(value),
 			})
 		}
 	}
@@ -202,7 +202,7 @@ func (s *Stats) Decr(stat string, value int64) {
 		if nil != s.riemannClient {
 			s.riemannClient.SendEvent(RiemannEvent{
 				Service: s.pathPrefix + stat,
-				Metric:  0 - value,
+				Metric:  0 - int(value),
 			})
 		}
 	}
@@ -219,7 +219,7 @@ func (s *Stats) Timing(stat string, delta int64) {
 		if nil != s.riemannClient {
 			s.riemannClient.SendEvent(RiemannEvent{
 				Service: s.pathPrefix + stat,
-				Metric:  delta,
+				Metric:  int(delta),
 			})
 		}
 	}
@@ -236,7 +236,7 @@ func (s *Stats) Gauge(stat string, value int64) {
 		if nil != s.riemannClient {
 			s.riemannClient.SendEvent(RiemannEvent{
 				Service: s.pathPrefix + stat,
-				Metric:  value,
+				Metric:  int(value),
 			})
 		}
 	}
