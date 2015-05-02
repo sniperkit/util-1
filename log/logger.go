@@ -115,7 +115,7 @@ field.
 */
 func DefaultLoggerConfig() LoggerConfig {
 	return LoggerConfig{
-		Prefix:       "[service]",
+		Prefix:       "service",
 		LogLevel:     "INFO",
 		AddTimeStamp: true,
 	}

@@ -81,7 +81,7 @@ NewStatsServer - Create a new StatsServer.
 func NewStatsServer(config StatsServerConfig, logger *Logger, stats *Stats) (*StatsServer, error) {
 	statsServer := StatsServer{
 		config:   config,
-		logger:   logger.NewModule("[stats]"),
+		logger:   logger.NewModule(":stats"),
 		stats:    stats,
 		server:   nil,
 		serveMux: http.NewServeMux(),
