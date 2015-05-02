@@ -172,17 +172,17 @@ Incr - Increment a stat by a value.
 func (s *Stats) Incr(stat string, value int64) {
 	s.jobChan <- func() {
 		if nil != s.json {
-			if target, ok := s.json.Path(stat).Data().(int64); ok {
-				s.json.SetP(target+value, stat)
-			} else {
-				s.json.SetP(value, stat)
+			total, _ := s.json.Path(stat).Data().(int64)
+			total += value
+			s.json.SetP(total, stat)
+
+			if nil != s.riemannClient {
+				s.riemannClient.SendEvent(RiemannEvent{
+					Service: s.pathPrefix + stat,
+					Metric:  int(total),
+					Tags:    []string{"stat"},
+				})
 			}
-		}
-		if nil != s.riemannClient {
-			s.riemannClient.SendEvent(RiemannEvent{
-				Service: s.pathPrefix + stat,
-				Metric:  int(value),
-			})
 		}
 	}
 }
@@ -193,17 +193,17 @@ Decr - Decrement a stat by a value.
 func (s *Stats) Decr(stat string, value int64) {
 	s.jobChan <- func() {
 		if nil != s.json {
-			if target, ok := s.json.Path(stat).Data().(int64); ok {
-				s.json.SetP(target-value, stat)
-			} else {
-				s.json.SetP(0-value, stat)
+			total, _ := s.json.Path(stat).Data().(int64)
+			total -= value
+			s.json.SetP(total, stat)
+
+			if nil != s.riemannClient {
+				s.riemannClient.SendEvent(RiemannEvent{
+					Service: s.pathPrefix + stat,
+					Metric:  int(total),
+					Tags:    []string{"stat"},
+				})
 			}
-		}
-		if nil != s.riemannClient {
-			s.riemannClient.SendEvent(RiemannEvent{
-				Service: s.pathPrefix + stat,
-				Metric:  0 - int(value),
-			})
 		}
 	}
 }
@@ -220,6 +220,7 @@ func (s *Stats) Timing(stat string, delta int64) {
 			s.riemannClient.SendEvent(RiemannEvent{
 				Service: s.pathPrefix + stat,
 				Metric:  int(delta),
+				Tags:    []string{"stat"},
 			})
 		}
 	}
@@ -237,6 +238,7 @@ func (s *Stats) Gauge(stat string, value int64) {
 			s.riemannClient.SendEvent(RiemannEvent{
 				Service: s.pathPrefix + stat,
 				Metric:  int(value),
+				Tags:    []string{"stat"},
 			})
 		}
 	}
