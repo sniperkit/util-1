@@ -41,7 +41,7 @@ type StatsConfig struct {
 	JobBuffer      int64  `json:"job_buffer" yaml:"job_buffer"`
 	RootPath       string `json:"prefix" yaml:"prefix"`
 	RetainInternal bool   `json:"retain_internal" yaml:"retain_internal"`
-	PushInterval   int64  `json:"push_interval_ms" yaml:"push_interval_ms`
+	PushInterval   int64  `json:"push_interval_ms" yaml:"push_interval_ms"`
 }
 
 /*
