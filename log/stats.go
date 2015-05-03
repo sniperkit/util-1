@@ -41,6 +41,7 @@ type StatsConfig struct {
 	JobBuffer      int64  `json:"job_buffer" yaml:"job_buffer"`
 	RootPath       string `json:"prefix" yaml:"prefix"`
 	RetainInternal bool   `json:"retain_internal" yaml:"retain_internal"`
+	PushInterval   int64  `json:"push_interval_ms" yaml:"push_interval_ms`
 }
 
 /*
@@ -52,6 +53,7 @@ func DefaultStatsConfig() StatsConfig {
 		JobBuffer:      100,
 		RootPath:       "service",
 		RetainInternal: true,
+		PushInterval:   1000,
 	}
 }
 
@@ -71,6 +73,7 @@ type Stats struct {
 	config        StatsConfig
 	jsonRoot      *gabs.Container
 	json          *gabs.Container
+	flatStats     map[string]interface{}
 	pathPrefix    string
 	timestamp     time.Time
 	jobChan       chan func()
@@ -97,6 +100,7 @@ func NewStats(config StatsConfig) *Stats {
 		config:     config,
 		jsonRoot:   jsonRoot,
 		json:       json,
+		flatStats:  map[string]interface{}{},
 		pathPrefix: pathPrefix,
 		timestamp:  time.Now(),
 		jobChan:    make(chan func(), config.JobBuffer),
@@ -139,11 +143,10 @@ func (s *Stats) GetStats(timeout time.Duration) (string, error) {
 	responseChan := make(chan string, 1)
 	errorChan := make(chan error, 1)
 
+	s.Incr("stats.requests", 1)
 	s.jobChan <- func() {
 		if nil != s.json {
-			s.Incr("stats.requests", 1)
-			s.Timing("uptime", (time.Since(s.timestamp).Nanoseconds() / 1e6))
-			s.Gauge("goroutines", int64(runtime.NumGoroutine()))
+			s.updateInternals()
 			select {
 			case responseChan <- s.jsonRoot.String():
 			default:
@@ -169,20 +172,14 @@ func (s *Stats) GetStats(timeout time.Duration) (string, error) {
 /*
 Incr - Increment a stat by a value.
 */
-func (s *Stats) Incr(stat string, value int64) {
+func (s *Stats) Incr(stat string, value int) {
 	s.jobChan <- func() {
-		if nil != s.json {
-			total, _ := s.json.Path(stat).Data().(int64)
-			total += value
-			s.json.SetP(total, stat)
+		total, _ := s.flatStats[stat].(int)
+		total += value
+		s.flatStats[stat] = total
 
-			if nil != s.riemannClient {
-				s.riemannClient.SendEvent(RiemannEvent{
-					Service: s.pathPrefix + stat,
-					Metric:  int(total),
-					Tags:    []string{"stat", "counter"},
-				})
-			}
+		if nil != s.json {
+			s.json.SetP(total, stat)
 		}
 	}
 }
@@ -190,20 +187,14 @@ func (s *Stats) Incr(stat string, value int64) {
 /*
 Decr - Decrement a stat by a value.
 */
-func (s *Stats) Decr(stat string, value int64) {
+func (s *Stats) Decr(stat string, value int) {
 	s.jobChan <- func() {
-		if nil != s.json {
-			total, _ := s.json.Path(stat).Data().(int64)
-			total -= value
-			s.json.SetP(total, stat)
+		total, _ := s.flatStats[stat].(int)
+		total -= value
+		s.flatStats[stat] = total
 
-			if nil != s.riemannClient {
-				s.riemannClient.SendEvent(RiemannEvent{
-					Service: s.pathPrefix + stat,
-					Metric:  int(total),
-					Tags:    []string{"stat", "counter"},
-				})
-			}
+		if nil != s.json {
+			s.json.SetP(total, stat)
 		}
 	}
 }
@@ -211,16 +202,18 @@ func (s *Stats) Decr(stat string, value int64) {
 /*
 Timing - Set a stat representing a duration.
 */
-func (s *Stats) Timing(stat string, delta int64) {
+func (s *Stats) Timing(stat string, delta float64) {
 	s.jobChan <- func() {
+		s.flatStats[stat] = delta
 		if nil != s.json {
-			s.json.SetP(fmt.Sprintf("%vms", delta), stat)
+			s.json.SetP(fmt.Sprintf("%vs", delta), stat)
 		}
 		if nil != s.riemannClient {
 			s.riemannClient.SendEvent(RiemannEvent{
 				Service: s.pathPrefix + stat,
-				Metric:  int(delta),
-				Tags:    []string{"stat", "timing"},
+				Metric:  delta,
+				Tags:    []string{"stat"},
+				TTL:     float32(s.config.PushInterval*2) / 1000,
 			})
 		}
 	}
@@ -229,16 +222,18 @@ func (s *Stats) Timing(stat string, delta int64) {
 /*
 Gauge - Set a stat as a gauge value.
 */
-func (s *Stats) Gauge(stat string, value int64) {
+func (s *Stats) Gauge(stat string, value float64) {
 	s.jobChan <- func() {
+		s.flatStats[stat] = value
 		if nil != s.json {
 			s.json.SetP(value, stat)
 		}
 		if nil != s.riemannClient {
 			s.riemannClient.SendEvent(RiemannEvent{
 				Service: s.pathPrefix + stat,
-				Metric:  int(value),
-				Tags:    []string{"stat", "gauge"},
+				Metric:  value,
+				Tags:    []string{"stat"},
+				TTL:     float32(s.config.PushInterval*2) / 1000,
 			})
 		}
 	}
@@ -248,12 +243,53 @@ func (s *Stats) Gauge(stat string, value int64) {
  */
 
 /*
+updateInternals - Update stats such as uptime and num goroutines.
+*/
+func (s *Stats) updateInternals() {
+	uptime := time.Since(s.timestamp).Seconds()
+	goroutines := runtime.NumGoroutine()
+
+	s.flatStats["uptime"] = uptime
+	s.flatStats["goroutines"] = goroutines
+	if nil != s.json {
+		s.json.SetP(fmt.Sprintf("%vs", uptime), "uptime")
+		s.json.SetP(goroutines, "goroutines")
+	}
+}
+
+/*
 loop - Internal loop of the logger, simply consumes a queue of funcs, and runs them within a single
 goroutine.
 */
 func (s *Stats) loop() {
-	for job := range s.jobChan {
-		job()
+	pushPeriod := time.Duration(s.config.PushInterval) * time.Millisecond
+	pushTimer := time.NewTimer(pushPeriod)
+
+	var job func()
+	var running = true
+
+	for running {
+		select {
+		case job, running = <-s.jobChan:
+			if running {
+				job()
+			}
+		case <-pushTimer.C:
+			s.updateInternals()
+			if s.riemannClient != nil {
+				events := []RiemannEvent{}
+				for flatStat, value := range s.flatStats {
+					events = append(events, RiemannEvent{
+						Service: s.pathPrefix + flatStat,
+						Metric:  value,
+						Tags:    []string{"stat"},
+						TTL:     float32(s.config.PushInterval*2) / 1000,
+					})
+				}
+				s.riemannClient.SendEvents(events)
+			}
+			pushTimer.Reset(pushPeriod)
+		}
 	}
 }
 

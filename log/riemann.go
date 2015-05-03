@@ -123,6 +123,7 @@ type RiemannEvent struct {
 	Description string
 	Metric      interface{}
 	Tags        []string
+	TTL         float32
 }
 
 // SendEvent - Send an event, this call is non-blocking and does not guarantee receipt.
@@ -134,7 +135,24 @@ func (r *RiemannClient) SendEvent(event RiemannEvent) {
 			Description: event.Description,
 			Metric:      event.Metric,
 			Tags:        event.Tags,
+			Ttl:         event.TTL,
 		})
+	}
+}
+
+// SendEvents - Send an array of events, this call is non-blocking and does not guarantee receipt.
+func (r *RiemannClient) SendEvents(events []RiemannEvent) {
+	r.jobChan <- func() {
+		for _, e := range events {
+			r.rClient.SendEvent(&goryman.Event{
+				Service:     e.Service,
+				State:       e.State,
+				Description: e.Description,
+				Metric:      e.Metric,
+				Tags:        e.Tags,
+				Ttl:         e.TTL,
+			})
+		}
 	}
 }
 
