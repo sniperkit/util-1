@@ -73,7 +73,7 @@ func TestStats(t *testing.T) {
 	byteResult, _ := json.Marshal(expectedJSON)
 
 	result := string(byteResult)
-	expected := `{"test":{"stats":{"generic":10,"increment":10},"other":{"thing":"5ms"}}}`
+	expected := `{"test":{"stats":{"generic":10,"increment":10},"other":{"thing":"5s"}}}`
 
 	if result != expected {
 		t.Errorf("Result != expected: %v != %v", result, expected)
@@ -126,7 +126,7 @@ func TestRootPathStats(t *testing.T) {
 	byteResult, _ := json.Marshal(expectedJSON.Root.Base)
 
 	result := string(byteResult)
-	expected := `{"test":{"stats":{"generic":10,"increment":10},"other":{"thing":"5ms"}}}`
+	expected := `{"test":{"stats":{"generic":10,"increment":10},"other":{"thing":"5s"}}}`
 
 	if result != expected {
 		t.Errorf("Result != expected: %v != %v", result, expected)
