@@ -180,24 +180,24 @@ func (l *Logger) UseRiemann(client *RiemannClient) error {
 printf - Prints a log message with any configured extras prepended.
 */
 func (l *Logger) printf(message, level string, other ...interface{}) {
-	prepend := l.config.Prefix
+	timestampStr := ""
 	if l.config.AddTimeStamp {
-		prepend = fmt.Sprintf("%v %v", time.Now().Format(time.RFC3339), prepend)
+		timestampStr = fmt.Sprintf("%v | ", time.Now().Format(time.RFC3339))
 	}
 
-	fmt.Fprintf(l.stream, fmt.Sprintf("%v <%v> %v", prepend, level, message), other...)
+	fmt.Fprintf(l.stream, fmt.Sprintf("%v%v | %v | %v", timestampStr, level, l.config.Prefix, message), other...)
 }
 
 /*
 printLine - Prints a log message with any configured extras prepended.
 */
 func (l *Logger) printLine(message, level string) {
-	prepend := l.config.Prefix
+	timestampStr := ""
 	if l.config.AddTimeStamp {
-		prepend = fmt.Sprintf("%v %v", time.Now().Format(time.RFC3339), prepend)
+		timestampStr = fmt.Sprintf("%v | ", time.Now().Format(time.RFC3339))
 	}
 
-	fmt.Fprintf(l.stream, fmt.Sprintf("%v <%v> %v\n", prepend, level, message))
+	fmt.Fprintf(l.stream, fmt.Sprintf("%v%v | %v | %v\n", timestampStr, level, l.config.Prefix, message))
 }
 
 /*
