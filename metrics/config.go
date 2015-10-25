@@ -26,8 +26,8 @@ package metrics
 
 // Config - Holds configuration values for the metrics core type.
 type Config struct {
-	Prefix  string        `json:"prefix"`
-	Riemann RiemannConfig `json:"riemann"`
+	Prefix  string        `json:"prefix" yaml:"prefix"`
+	Riemann RiemannConfig `json:"riemann" yaml:"riemann"`
 }
 
 // NewConfig - Create a new config with default values.

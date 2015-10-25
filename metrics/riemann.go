@@ -34,11 +34,11 @@ import (
 
 // RiemannConfig - Configuration fields for a riemann service.
 type RiemannConfig struct {
-	Enabled       bool     `json:"enabled"`
-	Server        string   `json:"server"`
-	TTL           float32  `json:"ttl"`
-	Tags          []string `json:"tags"`
-	FlushInterval string   `json:"flush_interval"`
+	Enabled       bool     `json:"enabled" yaml:"enabled"`
+	Server        string   `json:"server" yaml:"server"`
+	TTL           float32  `json:"ttl" yaml"ttl"`
+	Tags          []string `json:"tags" yaml:"tags"`
+	FlushInterval string   `json:"flush_interval" yaml:"flush_interval"`
 }
 
 // NewRiemannConfig - Create a new riemann config with default values.
