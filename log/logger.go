@@ -128,10 +128,9 @@ func DefaultLoggerConfig() LoggerConfig {
 Logger - A logger object with support for levelled logging and modular components.
 */
 type Logger struct {
-	stream        io.Writer
-	config        LoggerConfig
-	level         int
-	riemannClient *RiemannClient
+	stream io.Writer
+	config LoggerConfig
+	level  int
 }
 
 /*
@@ -155,22 +154,10 @@ func (l *Logger) NewModule(prefix string) *Logger {
 	config.Prefix = fmt.Sprintf("%v%v", config.Prefix, prefix)
 
 	return &Logger{
-		stream:        l.stream,
-		config:        config,
-		level:         l.level,
-		riemannClient: l.riemannClient,
+		stream: l.stream,
+		config: config,
+		level:  l.level,
 	}
-}
-
-/*
-UseRiemann - Register a RiemannClient object to be used for pushing log events to a riemann service.
-*/
-func (l *Logger) UseRiemann(client *RiemannClient) error {
-	if client == nil {
-		return ErrClientNil
-	}
-	l.riemannClient = client
-	return nil
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -200,19 +187,6 @@ func (l *Logger) printLine(message, level string) {
 	fmt.Fprintf(l.stream, fmt.Sprintf("%v%v | %v | %v\n", timestampStr, level, l.config.Prefix, message))
 }
 
-/*
-sendRiemann - If a Riemann client has been set then we send a log event through it.
-*/
-func (l *Logger) sendRiemann(message, level string, other ...interface{}) {
-	if l.riemannClient != nil {
-		l.riemannClient.SendEvent(RiemannEvent{
-			Service:     l.config.Prefix,
-			State:       level,
-			Description: fmt.Sprintf(message, other...),
-		})
-	}
-}
-
 /*--------------------------------------------------------------------------------------------------
  */
 
@@ -223,7 +197,6 @@ func (l *Logger) Fatalf(message string, other ...interface{}) {
 	if LogFatal <= l.level {
 		l.printf(message, "FATAL", other...)
 	}
-	l.sendRiemann(message, "FATAL", other...)
 }
 
 /*
@@ -233,7 +206,6 @@ func (l *Logger) Errorf(message string, other ...interface{}) {
 	if LogError <= l.level {
 		l.printf(message, "ERROR", other...)
 	}
-	l.sendRiemann(message, "ERROR", other...)
 }
 
 /*
@@ -243,7 +215,6 @@ func (l *Logger) Warnf(message string, other ...interface{}) {
 	if LogWarn <= l.level {
 		l.printf(message, "WARN", other...)
 	}
-	l.sendRiemann(message, "WARN", other...)
 }
 
 /*
@@ -253,7 +224,6 @@ func (l *Logger) Infof(message string, other ...interface{}) {
 	if LogInfo <= l.level {
 		l.printf(message, "INFO", other...)
 	}
-	l.sendRiemann(message, "INFO", other...)
 }
 
 /*
@@ -284,7 +254,6 @@ func (l *Logger) Fatalln(message string) {
 	if LogFatal <= l.level {
 		l.printLine(message, "FATAL")
 	}
-	l.sendRiemann(message, "FATAL")
 }
 
 /*
@@ -294,7 +263,6 @@ func (l *Logger) Errorln(message string) {
 	if LogError <= l.level {
 		l.printLine(message, "ERROR")
 	}
-	l.sendRiemann(message, "ERROR")
 }
 
 /*
@@ -304,7 +272,6 @@ func (l *Logger) Warnln(message string) {
 	if LogWarn <= l.level {
 		l.printLine(message, "WARN")
 	}
-	l.sendRiemann(message, "WARN")
 }
 
 /*
@@ -314,7 +281,6 @@ func (l *Logger) Infoln(message string) {
 	if LogInfo <= l.level {
 		l.printLine(message, "INFO")
 	}
-	l.sendRiemann(message, "INFO")
 }
 
 /*
