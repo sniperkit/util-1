@@ -36,7 +36,7 @@ import (
 type RiemannConfig struct {
 	Enabled       bool     `json:"enabled" yaml:"enabled"`
 	Server        string   `json:"server" yaml:"server"`
-	TTL           float32  `json:"ttl" yaml"ttl"`
+	TTL           float32  `json:"ttl" yaml:"ttl"`
 	Tags          []string `json:"tags" yaml:"tags"`
 	FlushInterval string   `json:"flush_interval" yaml:"flush_interval"`
 }
