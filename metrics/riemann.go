@@ -67,6 +67,7 @@ type Riemann struct {
 	quit          chan bool
 }
 
+// NewRiemann - Create a new riemann client.
 func NewRiemann(config RiemannConfig) (*Riemann, error) {
 	interval, err := time.ParseDuration(config.FlushInterval)
 	if nil != err {
@@ -93,6 +94,7 @@ func NewRiemann(config RiemannConfig) (*Riemann, error) {
 
 //--------------------------------------------------------------------------------------------------
 
+// SendEvent - Send a riemann event, the event is cached and send in batches.
 func (r *Riemann) SendEvent(e *Event) {
 	r.Lock()
 	defer r.Unlock()
@@ -104,6 +106,7 @@ func (r *Riemann) SendEvent(e *Event) {
 	r.eventsCache[e.Service] = event
 }
 
+// Close - Close the riemann client and stop batch uploading.
 func (r *Riemann) Close() {
 	close(r.quit)
 }
