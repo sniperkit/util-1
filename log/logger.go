@@ -25,6 +25,7 @@ package log
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -107,6 +108,7 @@ type LoggerConfig struct {
 	Prefix       string `json:"prefix" yaml:"prefix"`
 	LogLevel     string `json:"log_level" yaml:"log_level"`
 	AddTimeStamp bool   `json:"add_timestamp" yaml:"add_timestamp"`
+	JSONFormat   bool   `json:"json_format" yaml:"json_format"`
 }
 
 /*
@@ -118,6 +120,7 @@ func DefaultLoggerConfig() LoggerConfig {
 		Prefix:       "service",
 		LogLevel:     "INFO",
 		AddTimeStamp: true,
+		JSONFormat:   false,
 	}
 }
 
@@ -167,24 +170,62 @@ func (l *Logger) NewModule(prefix string) *Logger {
 printf - Prints a log message with any configured extras prepended.
 */
 func (l *Logger) printf(message, level string, other ...interface{}) {
-	timestampStr := ""
-	if l.config.AddTimeStamp {
-		timestampStr = fmt.Sprintf("%v | ", time.Now().Format(time.RFC3339))
+	if l.config.JSONFormat {
+		if l.config.AddTimeStamp {
+			fmt.Fprintf(l.stream, fmt.Sprintf(
+				"{\"timestamp\":\"%v\",\"level\":\"%v\",\"service\":\"%v\",\"message\":%v}\n",
+				time.Now().Format(time.RFC3339), level, l.config.Prefix,
+				strconv.QuoteToASCII(message),
+			), other...)
+		} else {
+			fmt.Fprintf(l.stream, fmt.Sprintf(
+				"{\"level\":\"%v\",\"service\":\"%v\",\"message\":%v}\n",
+				level, l.config.Prefix,
+				strconv.QuoteToASCII(message),
+			), other...)
+		}
+	} else {
+		if l.config.AddTimeStamp {
+			fmt.Fprintf(l.stream, fmt.Sprintf(
+				"%v | %v | %v | %v",
+				time.Now().Format(time.RFC3339), level, l.config.Prefix, message,
+			), other...)
+		} else {
+			fmt.Fprintf(l.stream, fmt.Sprintf(
+				"%v | %v | %v", level, l.config.Prefix, message,
+			), other...)
+		}
 	}
-
-	fmt.Fprintf(l.stream, fmt.Sprintf("%v%v | %v | %v", timestampStr, level, l.config.Prefix, message), other...)
 }
 
 /*
 printLine - Prints a log message with any configured extras prepended.
 */
 func (l *Logger) printLine(message, level string) {
-	timestampStr := ""
-	if l.config.AddTimeStamp {
-		timestampStr = fmt.Sprintf("%v | ", time.Now().Format(time.RFC3339))
+	if l.config.JSONFormat {
+		if l.config.AddTimeStamp {
+			fmt.Fprintf(l.stream,
+				"{\"timestamp\":\"%v\",\"level\":\"%v\",\"service\":\"%v\",\"message\":%v}\n",
+				time.Now().Format(time.RFC3339), level, l.config.Prefix,
+				strconv.QuoteToASCII(message),
+			)
+		} else {
+			fmt.Fprintf(l.stream,
+				"{\"level\":\"%v\",\"service\":\"%v\",\"message\":%v}\n",
+				level, l.config.Prefix,
+				strconv.QuoteToASCII(message),
+			)
+		}
+	} else {
+		if l.config.AddTimeStamp {
+			fmt.Fprintf(
+				l.stream, "%v | %v | %v | %v\n",
+				time.Now().Format(time.RFC3339), level, l.config.Prefix, message,
+			)
+		} else {
+			fmt.Fprintf(l.stream, "%v | %v | %v\n", level, l.config.Prefix, message)
+		}
 	}
-
-	fmt.Fprintf(l.stream, fmt.Sprintf("%v%v | %v | %v\n", timestampStr, level, l.config.Prefix, message))
 }
 
 /*--------------------------------------------------------------------------------------------------
