@@ -37,7 +37,7 @@ func (l *LogBuffer) Write(p []byte) (n int, err error) {
 }
 
 func TestModules(t *testing.T) {
-	loggerConfig := DefaultLoggerConfig()
+	loggerConfig := NewLoggerConfig()
 	loggerConfig.AddTimeStamp = false
 	loggerConfig.Prefix = "root"
 	loggerConfig.LogLevel = "WARN"
@@ -67,7 +67,7 @@ func TestModules(t *testing.T) {
 }
 
 func TestFormattedLogging(t *testing.T) {
-	loggerConfig := DefaultLoggerConfig()
+	loggerConfig := NewLoggerConfig()
 	loggerConfig.AddTimeStamp = false
 	loggerConfig.Prefix = "test"
 	loggerConfig.LogLevel = "WARN"
@@ -90,7 +90,7 @@ func TestFormattedLogging(t *testing.T) {
 }
 
 func TestLineLogging(t *testing.T) {
-	loggerConfig := DefaultLoggerConfig()
+	loggerConfig := NewLoggerConfig()
 	loggerConfig.AddTimeStamp = false
 	loggerConfig.Prefix = "test"
 	loggerConfig.LogLevel = "WARN"
@@ -123,7 +123,7 @@ func (l *LogCounter) Write(p []byte) (n int, err error) {
 
 func TestLogLevels(t *testing.T) {
 	for i := 0; i < LogAll; i++ {
-		loggerConfig := DefaultLoggerConfig()
+		loggerConfig := NewLoggerConfig()
 		loggerConfig.LogLevel = intToLogLevel(i)
 
 		buf := LogCounter{count: 0}

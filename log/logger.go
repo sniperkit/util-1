@@ -112,10 +112,10 @@ type LoggerConfig struct {
 }
 
 /*
-DefaultLoggerConfig - Returns a fully defined logger configuration with the default values for each
+NewLoggerConfig - Returns a fully defined logger configuration with the default values for each
 field.
 */
-func DefaultLoggerConfig() LoggerConfig {
+func NewLoggerConfig() LoggerConfig {
 	return LoggerConfig{
 		Prefix:       "service",
 		LogLevel:     "INFO",
@@ -139,7 +139,7 @@ type Logger struct {
 /*
 NewLogger - Create and return a new logger object.
 */
-func NewLogger(stream io.Writer, config LoggerConfig) *Logger {
+func NewLogger(stream io.Writer, config LoggerConfig) Modular {
 	logger := Logger{
 		stream: stream,
 		config: config,
@@ -152,7 +152,7 @@ func NewLogger(stream io.Writer, config LoggerConfig) *Logger {
 NewModule - Creates a new logger object from the previous, using the same configuration, but adds
 an extra prefix to represent a submodule.
 */
-func (l *Logger) NewModule(prefix string) *Logger {
+func (l *Logger) NewModule(prefix string) Modular {
 	config := l.config
 	config.Prefix = fmt.Sprintf("%v%v", config.Prefix, prefix)
 
