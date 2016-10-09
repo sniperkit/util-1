@@ -22,13 +22,8 @@ THE SOFTWARE.
 
 package metrics
 
-import "net/http"
-
-// Aggregator - An interface for metrics aggregation.
-type Aggregator interface {
-	// JSONHandler - Returns a handler for accessing metrics as a JSON blob.
-	JSONHandler() http.HandlerFunc
-
+// Type - An interface for metrics aggregation.
+type Type interface {
 	// Incr - Increment a metric by an amount.
 	Incr(path string, count int)
 
@@ -40,15 +35,6 @@ type Aggregator interface {
 
 	// Gauge - Set a gauge metric.
 	Gauge(path string, value int)
-
-	// Close - Stop aggregating stats and clean up resources.
-	Close()
-}
-
-// EventAggregator - An interface for event based metrics aggregation.
-type EventAggregator interface {
-	// SendEvent - Send an event type.
-	SendEvent(e *Event)
 
 	// Close - Stop aggregating stats and clean up resources.
 	Close()

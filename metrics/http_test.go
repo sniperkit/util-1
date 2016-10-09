@@ -22,20 +22,11 @@ THE SOFTWARE.
 
 package metrics
 
-//--------------------------------------------------------------------------------------------------
+import "testing"
 
-// Config - Holds configuration values for the metrics core type.
-type Config struct {
-	Prefix  string        `json:"prefix" yaml:"prefix"`
-	Riemann RiemannConfig `json:"riemann" yaml:"riemann"`
-}
-
-// NewConfig - Create a new config with default values.
-func NewConfig() Config {
-	return Config{
-		Prefix:  "metrics",
-		Riemann: NewRiemannConfig(),
+func TestHTTPInterface(t *testing.T) {
+	o := &HTTP{}
+	if Type(o) == nil {
+		t.Errorf("Type does not satisfy Type interface.")
 	}
 }
-
-//--------------------------------------------------------------------------------------------------

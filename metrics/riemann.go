@@ -32,33 +32,47 @@ import (
 
 //--------------------------------------------------------------------------------------------------
 
-// RiemannConfig - Configuration fields for a riemann service.
-type RiemannConfig struct {
-	Enabled       bool     `json:"enabled" yaml:"enabled"`
-	Server        string   `json:"server" yaml:"server"`
-	TTL           float32  `json:"ttl" yaml:"ttl"`
-	Tags          []string `json:"tags" yaml:"tags"`
-	FlushInterval string   `json:"flush_interval" yaml:"flush_interval"`
-}
-
-// NewRiemannConfig - Create a new riemann config with default values.
-func NewRiemannConfig() RiemannConfig {
-	return RiemannConfig{
-		Enabled:       false,
-		Server:        "",
-		TTL:           5,
-		Tags:          []string{"service"},
-		FlushInterval: "2s",
+func init() {
+	constructors["riemann"] = typeSpec{
+		constructor: NewRiemann,
+		description: `
+Benthos can send metrics to Riemann as events, you can set your own tags but it
+is recommended that you ensure the 'meter' tag is there to ensure they are dealt
+with correctly within Riemann.`,
 	}
 }
 
 //--------------------------------------------------------------------------------------------------
 
-// Riemann - A Riemann client that supports the EventAggregator interface.
+// RiemannConfig - Configuration fields for a riemann service.
+type RiemannConfig struct {
+	Server        string   `json:"server" yaml:"server"`
+	TTL           float32  `json:"ttl" yaml:"ttl"`
+	Tags          []string `json:"tags" yaml:"tags"`
+	FlushInterval string   `json:"flush_interval" yaml:"flush_interval"`
+	Prefix        string   `json:"prefix" yaml:"prefix"`
+}
+
+// NewRiemannConfig - Create a new riemann config with default values.
+func NewRiemannConfig() RiemannConfig {
+	return RiemannConfig{
+		Server:        "",
+		TTL:           5,
+		Tags:          []string{"service", "meter"},
+		FlushInterval: "2s",
+		Prefix:        "",
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+
+// Riemann - A Riemann client that supports the Type interface.
 type Riemann struct {
-	sync.RWMutex
+	sync.Mutex
 
 	config RiemannConfig
+
+	flatMetrics map[string]int
 
 	Client      *raidman.Client
 	eventsCache map[string]*raidman.Event
@@ -68,19 +82,19 @@ type Riemann struct {
 }
 
 // NewRiemann - Create a new riemann client.
-func NewRiemann(config RiemannConfig) (*Riemann, error) {
-	interval, err := time.ParseDuration(config.FlushInterval)
+func NewRiemann(config Config) (Type, error) {
+	interval, err := time.ParseDuration(config.Riemann.FlushInterval)
 	if nil != err {
 		return nil, fmt.Errorf("failed to parse flush interval: %v", err)
 	}
 
-	client, err := raidman.Dial("tcp", config.Server)
+	client, err := raidman.Dial("tcp", config.Riemann.Server)
 	if err != nil {
 		return nil, err
 	}
 
 	r := &Riemann{
-		config:        config,
+		config:        config.Riemann,
 		Client:        client,
 		flushInterval: interval,
 		eventsCache:   make(map[string]*raidman.Event),
@@ -94,16 +108,70 @@ func NewRiemann(config RiemannConfig) (*Riemann, error) {
 
 //--------------------------------------------------------------------------------------------------
 
-// SendEvent - Send a riemann event, the event is cached and send in batches.
-func (r *Riemann) SendEvent(e *Event) {
+// Incr - Increment a stat by a value.
+func (r *Riemann) Incr(stat string, value int) {
 	r.Lock()
 	defer r.Unlock()
 
-	event := (*raidman.Event)(e)
-	event.Ttl = r.config.TTL
-	event.Tags = append(r.config.Tags, event.Tags...)
+	total, _ := r.flatMetrics[stat]
+	total += value
 
-	r.eventsCache[e.Service] = event
+	r.flatMetrics[stat] = total
+
+	service := r.config.Prefix + stat
+	r.eventsCache[service] = &raidman.Event{
+		Ttl:     r.config.TTL,
+		Tags:    r.config.Tags,
+		Metric:  total,
+		Service: service,
+	}
+}
+
+// Decr - Decrement a stat by a value.
+func (r *Riemann) Decr(stat string, value int) {
+	r.Lock()
+	defer r.Unlock()
+
+	total, _ := r.flatMetrics[stat]
+	total -= value
+
+	r.flatMetrics[stat] = total
+
+	service := r.config.Prefix + stat
+	r.eventsCache[service] = &raidman.Event{
+		Ttl:     r.config.TTL,
+		Tags:    r.config.Tags,
+		Metric:  total,
+		Service: service,
+	}
+}
+
+// Timing - Set a stat representing a duration.
+func (r *Riemann) Timing(stat string, delta int) {
+	r.Lock()
+	defer r.Unlock()
+
+	service := r.config.Prefix + stat
+	r.eventsCache[service] = &raidman.Event{
+		Ttl:     r.config.TTL,
+		Tags:    r.config.Tags,
+		Metric:  delta,
+		Service: service,
+	}
+}
+
+// Gauge - Set a stat as a gauge value.
+func (r *Riemann) Gauge(stat string, value int) {
+	r.Lock()
+	defer r.Unlock()
+
+	service := r.config.Prefix + stat
+	r.eventsCache[service] = &raidman.Event{
+		Ttl:     r.config.TTL,
+		Tags:    r.config.Tags,
+		Metric:  value,
+		Service: service,
+	}
 }
 
 // Close - Close the riemann client and stop batch uploading.

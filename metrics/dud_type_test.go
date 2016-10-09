@@ -26,7 +26,7 @@ import "testing"
 
 func TestDudInterface(t *testing.T) {
 	d := DudType{}
-	if Aggregator(d) == nil {
-		t.Errorf("DudType does not satisfy Aggregator interface.")
+	if Type(d) == nil {
+		t.Errorf("DudType does not satisfy Type interface.")
 	}
 }

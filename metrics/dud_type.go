@@ -22,15 +22,10 @@ THE SOFTWARE.
 
 package metrics
 
-import "net/http"
+//--------------------------------------------------------------------------------------------------
 
-// DudType - Implements the Aggregator interface but doesn't actual do anything.
+// DudType - Implements the Type interface but doesn't actual do anything.
 type DudType struct{}
-
-// JSONHandler - Does nothing.
-func (d DudType) JSONHandler() http.HandlerFunc {
-	return func(http.ResponseWriter, *http.Request) {}
-}
 
 // Incr - Does nothing.
 func (d DudType) Incr(path string, count int) {}
@@ -46,3 +41,5 @@ func (d DudType) Gauge(path string, value int) {}
 
 // Close - Does nothing.
 func (d DudType) Close() {}
+
+//--------------------------------------------------------------------------------------------------

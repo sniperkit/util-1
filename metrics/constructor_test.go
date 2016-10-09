@@ -24,12 +24,12 @@ package metrics
 
 import "testing"
 
-func TestTypeInterface(t *testing.T) {
-	o := &Type{}
-	if Aggregator(o) == nil {
-		t.Errorf("Type does not satisfy Aggregator interface.")
+func TestInterfaces(t *testing.T) {
+	foo, err := New(NewConfig())
+	if err != nil {
+		t.Error(err)
 	}
-	if EventAggregator(o) == nil {
-		t.Errorf("Type does not satisfy EventAggregator interface.")
-	}
+	bar := Type(foo)
+	foo.Incr("nope", 1)
+	bar.Incr("nope", 1)
 }
