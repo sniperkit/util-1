@@ -53,6 +53,7 @@ type Config struct {
 	Type    string        `json:"type" yaml:"type"`
 	HTTP    HTTPConfig    `json:"http_server" yaml:"http_server"`
 	Riemann RiemannConfig `json:"riemann" yaml:"riemann"`
+	Statsd  StatsdConfig  `json:"statsd" yaml:"statsd"`
 }
 
 // NewConfig - Returns a configuration struct fully populated with default values.
@@ -61,6 +62,7 @@ func NewConfig() Config {
 		Type:    "none",
 		HTTP:    NewHTTPConfig(),
 		Riemann: NewRiemannConfig(),
+		Statsd:  NewStatsdConfig(),
 	}
 }
 
