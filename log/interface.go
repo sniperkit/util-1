@@ -42,6 +42,8 @@ type Modular interface {
 	Infoln(message string)
 	Debugln(message string)
 	Traceln(message string)
+
+	Output(calldepth int, s string) error
 }
 
 /*--------------------------------------------------------------------------------------------------

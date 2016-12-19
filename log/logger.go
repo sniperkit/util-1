@@ -30,12 +30,9 @@ import (
 	"time"
 )
 
-/*--------------------------------------------------------------------------------------------------
- */
+//--------------------------------------------------------------------------------------------------
 
-/*
-Logger level constants
-*/
+// Logger level constants
 const (
 	LogOff   int = 0
 	LogFatal int = 1
@@ -47,9 +44,7 @@ const (
 	LogAll   int = 7
 )
 
-/*
-intToLogLevel - Converts an integer into a human readable log level.
-*/
+// intToLogLevel - Converts an integer into a human readable log level.
 func intToLogLevel(i int) string {
 	switch i {
 	case LogOff:
@@ -72,9 +67,7 @@ func intToLogLevel(i int) string {
 	return "ALL"
 }
 
-/*
-logLevelToInt - Converts a human readable log level into an integer value.
-*/
+// logLevelToInt - Converts a human readable log level into an integer value.
 func logLevelToInt(level string) int {
 	levelUpper := strings.ToUpper(level)
 	switch levelUpper {
@@ -98,12 +91,9 @@ func logLevelToInt(level string) int {
 	return -1
 }
 
-/*--------------------------------------------------------------------------------------------------
- */
+//--------------------------------------------------------------------------------------------------
 
-/*
-LoggerConfig - Holds configuration options for a logger object.
-*/
+// LoggerConfig - Holds configuration options for a logger object.
 type LoggerConfig struct {
 	Prefix       string `json:"prefix" yaml:"prefix"`
 	LogLevel     string `json:"log_level" yaml:"log_level"`
@@ -111,10 +101,7 @@ type LoggerConfig struct {
 	JSONFormat   bool   `json:"json_format" yaml:"json_format"`
 }
 
-/*
-NewLoggerConfig - Returns a fully defined logger configuration with the default values for each
-field.
-*/
+// NewLoggerConfig - Returns a logger configuration with the default values for each field.
 func NewLoggerConfig() LoggerConfig {
 	return LoggerConfig{
 		Prefix:       "service",
@@ -124,21 +111,16 @@ func NewLoggerConfig() LoggerConfig {
 	}
 }
 
-/*--------------------------------------------------------------------------------------------------
- */
+//--------------------------------------------------------------------------------------------------
 
-/*
-Logger - A logger object with support for levelled logging and modular components.
-*/
+// Logger - A logger object with support for levelled logging and modular components.
 type Logger struct {
 	stream io.Writer
 	config LoggerConfig
 	level  int
 }
 
-/*
-NewLogger - Create and return a new logger object.
-*/
+// NewLogger - Create and return a new logger object.
 func NewLogger(stream io.Writer, config LoggerConfig) Modular {
 	logger := Logger{
 		stream: stream,
@@ -148,10 +130,8 @@ func NewLogger(stream io.Writer, config LoggerConfig) Modular {
 	return &logger
 }
 
-/*
-NewModule - Creates a new logger object from the previous, using the same configuration, but adds
-an extra prefix to represent a submodule.
-*/
+// NewModule - Creates a new logger object from the previous, using the same configuration, but adds
+// an extra prefix to represent a submodule.
 func (l *Logger) NewModule(prefix string) Modular {
 	config := l.config
 	config.Prefix = fmt.Sprintf("%v%v", config.Prefix, prefix)
@@ -163,12 +143,9 @@ func (l *Logger) NewModule(prefix string) Modular {
 	}
 }
 
-/*--------------------------------------------------------------------------------------------------
- */
+//--------------------------------------------------------------------------------------------------
 
-/*
-printf - Prints a log message with any configured extras prepended.
-*/
+// printf - Prints a log message with any configured extras prepended.
 func (l *Logger) printf(message, level string, other ...interface{}) {
 	if l.config.JSONFormat {
 		if l.config.AddTimeStamp {
@@ -198,9 +175,7 @@ func (l *Logger) printf(message, level string, other ...interface{}) {
 	}
 }
 
-/*
-printLine - Prints a log message with any configured extras prepended.
-*/
+// printLine - Prints a log message with any configured extras prepended.
 func (l *Logger) printLine(message, level string) {
 	if l.config.JSONFormat {
 		if l.config.AddTimeStamp {
@@ -228,119 +203,100 @@ func (l *Logger) printLine(message, level string) {
 	}
 }
 
-/*--------------------------------------------------------------------------------------------------
- */
+//--------------------------------------------------------------------------------------------------
 
-/*
-Fatalf - Print a fatal message to the console. Does NOT cause panic.
-*/
+// Fatalf - Print a fatal message to the console. Does NOT cause panic.
 func (l *Logger) Fatalf(message string, other ...interface{}) {
 	if LogFatal <= l.level {
 		l.printf(message, "FATAL", other...)
 	}
 }
 
-/*
-Errorf - Print an error message to the console.
-*/
+// Errorf - Print an error message to the console.
 func (l *Logger) Errorf(message string, other ...interface{}) {
 	if LogError <= l.level {
 		l.printf(message, "ERROR", other...)
 	}
 }
 
-/*
-Warnf - Print a warning message to the console.
-*/
+// Warnf - Print a warning message to the console.
 func (l *Logger) Warnf(message string, other ...interface{}) {
 	if LogWarn <= l.level {
 		l.printf(message, "WARN", other...)
 	}
 }
 
-/*
-Infof - Print an information message to the console.
-*/
+// Infof - Print an information message to the console.
 func (l *Logger) Infof(message string, other ...interface{}) {
 	if LogInfo <= l.level {
 		l.printf(message, "INFO", other...)
 	}
 }
 
-/*
-Debugf - Print a debug message to the console.
-*/
+// Debugf - Print a debug message to the console.
 func (l *Logger) Debugf(message string, other ...interface{}) {
 	if LogDebug <= l.level {
 		l.printf(message, "DEBUG", other...)
 	}
 }
 
-/*
-Tracef - Print a trace message to the console.
-*/
+// Tracef - Print a trace message to the console.
 func (l *Logger) Tracef(message string, other ...interface{}) {
 	if LogTrace <= l.level {
 		l.printf(message, "TRACE", other...)
 	}
 }
 
-/*--------------------------------------------------------------------------------------------------
- */
+//--------------------------------------------------------------------------------------------------
 
-/*
-Fatalln - Print a fatal message to the console. Does NOT cause panic.
-*/
+// Fatalln - Print a fatal message to the console. Does NOT cause panic.
 func (l *Logger) Fatalln(message string) {
 	if LogFatal <= l.level {
 		l.printLine(message, "FATAL")
 	}
 }
 
-/*
-Errorln - Print an error message to the console.
-*/
+// Errorln - Print an error message to the console.
 func (l *Logger) Errorln(message string) {
 	if LogError <= l.level {
 		l.printLine(message, "ERROR")
 	}
 }
 
-/*
-Warnln - Print a warning message to the console.
-*/
+// Warnln - Print a warning message to the console.
 func (l *Logger) Warnln(message string) {
 	if LogWarn <= l.level {
 		l.printLine(message, "WARN")
 	}
 }
 
-/*
-Infoln - Print an information message to the console.
-*/
+// Infoln - Print an information message to the console.
 func (l *Logger) Infoln(message string) {
 	if LogInfo <= l.level {
 		l.printLine(message, "INFO")
 	}
 }
 
-/*
-Debugln - Print a debug message to the console.
-*/
+// Debugln - Print a debug message to the console.
 func (l *Logger) Debugln(message string) {
 	if LogDebug <= l.level {
 		l.printLine(message, "DEBUG")
 	}
 }
 
-/*
-Traceln - Print a trace message to the console.
-*/
+// Traceln - Print a trace message to the console.
 func (l *Logger) Traceln(message string) {
 	if LogTrace <= l.level {
 		l.printLine(message, "TRACE")
 	}
 }
 
-/*--------------------------------------------------------------------------------------------------
- */
+//--------------------------------------------------------------------------------------------------
+
+// Output - Prints s to our output. Calldepth is ignored.
+func (l *Logger) Output(calldepth int, s string) error {
+	io.WriteString(l.stream, s)
+	return nil
+}
+
+//--------------------------------------------------------------------------------------------------
