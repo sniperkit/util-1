@@ -175,8 +175,9 @@ func (r *Riemann) Gauge(stat string, value int) {
 }
 
 // Close - Close the riemann client and stop batch uploading.
-func (r *Riemann) Close() {
+func (r *Riemann) Close() error {
 	close(r.quit)
+	return nil
 }
 
 //--------------------------------------------------------------------------------------------------

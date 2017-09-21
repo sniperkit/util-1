@@ -176,7 +176,8 @@ func (h *HTTP) Gauge(stat string, value int) {
 }
 
 // Close - Stops the HTTP object from aggregating metrics and cleans up resources.
-func (h *HTTP) Close() {
+func (h *HTTP) Close() error {
+	return nil
 }
 
 //--------------------------------------------------------------------------------------------------

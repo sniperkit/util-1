@@ -37,5 +37,5 @@ type Type interface {
 	Gauge(path string, value int)
 
 	// Close - Stop aggregating stats and clean up resources.
-	Close()
+	Close() error
 }

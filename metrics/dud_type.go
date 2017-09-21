@@ -40,6 +40,6 @@ func (d DudType) Timing(path string, delta int) {}
 func (d DudType) Gauge(path string, value int) {}
 
 // Close - Does nothing.
-func (d DudType) Close() {}
+func (d DudType) Close() error { return nil }
 
 //--------------------------------------------------------------------------------------------------

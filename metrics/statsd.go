@@ -113,8 +113,9 @@ func (h *Statsd) Gauge(stat string, value int) {
 }
 
 // Close - Stops the Statsd object from aggregating metrics and cleans up resources.
-func (h *Statsd) Close() {
+func (h *Statsd) Close() error {
 	h.s.Close()
+	return nil
 }
 
 //--------------------------------------------------------------------------------------------------
