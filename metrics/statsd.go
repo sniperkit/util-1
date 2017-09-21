@@ -93,23 +93,27 @@ func NewStatsd(config Config) (Type, error) {
 //--------------------------------------------------------------------------------------------------
 
 // Incr - Increment a stat by a value.
-func (h *Statsd) Incr(stat string, value int) {
+func (h *Statsd) Incr(stat string, value int64) error {
 	h.s.Count(stat, value)
+	return nil
 }
 
 // Decr - Decrement a stat by a value.
-func (h *Statsd) Decr(stat string, value int) {
+func (h *Statsd) Decr(stat string, value int64) error {
 	h.s.Count(stat, -value)
+	return nil
 }
 
 // Timing - Set a stat representing a duration.
-func (h *Statsd) Timing(stat string, delta int) {
+func (h *Statsd) Timing(stat string, delta int64) error {
 	h.s.Timing(stat, delta)
+	return nil
 }
 
 // Gauge - Set a stat as a gauge value.
-func (h *Statsd) Gauge(stat string, value int) {
+func (h *Statsd) Gauge(stat string, value int64) error {
 	h.s.Gauge(stat, value)
+	return nil
 }
 
 // Close - Stops the Statsd object from aggregating metrics and cleans up resources.

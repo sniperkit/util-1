@@ -72,7 +72,7 @@ type Riemann struct {
 
 	config RiemannConfig
 
-	flatMetrics map[string]int
+	flatMetrics map[string]int64
 
 	Client      *raidman.Client
 	eventsCache map[string]*raidman.Event
@@ -109,7 +109,7 @@ func NewRiemann(config Config) (Type, error) {
 //--------------------------------------------------------------------------------------------------
 
 // Incr - Increment a stat by a value.
-func (r *Riemann) Incr(stat string, value int) {
+func (r *Riemann) Incr(stat string, value int64) error {
 	r.Lock()
 	defer r.Unlock()
 
@@ -125,10 +125,11 @@ func (r *Riemann) Incr(stat string, value int) {
 		Metric:  total,
 		Service: service,
 	}
+	return nil
 }
 
 // Decr - Decrement a stat by a value.
-func (r *Riemann) Decr(stat string, value int) {
+func (r *Riemann) Decr(stat string, value int64) error {
 	r.Lock()
 	defer r.Unlock()
 
@@ -144,10 +145,11 @@ func (r *Riemann) Decr(stat string, value int) {
 		Metric:  total,
 		Service: service,
 	}
+	return nil
 }
 
 // Timing - Set a stat representing a duration.
-func (r *Riemann) Timing(stat string, delta int) {
+func (r *Riemann) Timing(stat string, delta int64) error {
 	r.Lock()
 	defer r.Unlock()
 
@@ -158,10 +160,11 @@ func (r *Riemann) Timing(stat string, delta int) {
 		Metric:  delta,
 		Service: service,
 	}
+	return nil
 }
 
 // Gauge - Set a stat as a gauge value.
-func (r *Riemann) Gauge(stat string, value int) {
+func (r *Riemann) Gauge(stat string, value int64) error {
 	r.Lock()
 	defer r.Unlock()
 
@@ -172,6 +175,7 @@ func (r *Riemann) Gauge(stat string, value int) {
 		Metric:  value,
 		Service: service,
 	}
+	return nil
 }
 
 // Close - Close the riemann client and stop batch uploading.

@@ -76,7 +76,7 @@ type HTTP struct {
 	config      HTTPConfig
 	jsonRoot    *gabs.Container
 	json        *gabs.Container
-	flatMetrics map[string]int
+	flatMetrics map[string]int64
 	pathPrefix  string
 	timestamp   time.Time
 
@@ -100,7 +100,7 @@ func NewHTTP(config Config) (Type, error) {
 		config:      config.HTTP,
 		jsonRoot:    jsonRoot,
 		json:        json,
-		flatMetrics: map[string]int{},
+		flatMetrics: map[string]int64{},
 		pathPrefix:  pathPrefix,
 		timestamp:   time.Now(),
 	}
@@ -137,7 +137,7 @@ func (h *HTTP) JSONHandler() http.HandlerFunc {
 }
 
 // Incr - Increment a stat by a value.
-func (h *HTTP) Incr(stat string, value int) {
+func (h *HTTP) Incr(stat string, value int64) error {
 	h.Lock()
 	total, _ := h.flatMetrics[stat]
 	total += value
@@ -145,10 +145,11 @@ func (h *HTTP) Incr(stat string, value int) {
 	h.flatMetrics[stat] = total
 	h.json.SetP(total, stat)
 	h.Unlock()
+	return nil
 }
 
 // Decr - Decrement a stat by a value.
-func (h *HTTP) Decr(stat string, value int) {
+func (h *HTTP) Decr(stat string, value int64) error {
 	h.Lock()
 	total, _ := h.flatMetrics[stat]
 	total -= value
@@ -156,23 +157,26 @@ func (h *HTTP) Decr(stat string, value int) {
 	h.flatMetrics[stat] = total
 	h.json.SetP(total, stat)
 	h.Unlock()
+	return nil
 }
 
 // Timing - Set a stat representing a duration.
-func (h *HTTP) Timing(stat string, delta int) {
+func (h *HTTP) Timing(stat string, delta int64) error {
 	readable := time.Duration(delta).String()
 
 	h.Lock()
 	h.json.SetP(delta, stat)
 	h.json.SetP(readable, stat+"_readable")
 	h.Unlock()
+	return nil
 }
 
 // Gauge - Set a stat as a gauge value.
-func (h *HTTP) Gauge(stat string, value int) {
+func (h *HTTP) Gauge(stat string, value int64) error {
 	h.Lock()
 	h.json.SetP(value, stat)
 	h.Unlock()
+	return nil
 }
 
 // Close - Stops the HTTP object from aggregating metrics and cleans up resources.
